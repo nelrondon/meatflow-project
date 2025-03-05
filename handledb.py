@@ -8,12 +8,10 @@ class DB:
         try:
             with open(path, "r") as file:
                 data = json.load(file)
-
         except FileNotFoundError:
             print(f"No existe el archivo {path}")
         except:
             pass
-
         return data
     
     @staticmethod
