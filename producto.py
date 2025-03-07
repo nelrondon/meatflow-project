@@ -1,18 +1,16 @@
 class Producto:
-    def __init__(self, name, cat, p_buy, p_sell, exp_date, stock, tipo):
-        self.name = name
-        self.category = cat
-        self.price_buy = p_buy
-        self.price_sell = p_sell
-        self.exp_date = exp_date
-        self.stock = stock
-
-        self.type = tipo
+    def __init__(self, data:dict):
+        self.name = data["name"]
+        self.category = data["category"]
+        self.price_buy = data["price_buy"]
+        self.price_sell = data["price_sell"]
+        self.stock = data["stock"]
+        self.type = data["type"]
 
     def setPriceSell(self):
         pass
 
     def calcGain(self):
-        pass
+        return self.price_sell - self.price_buy
 
     
