@@ -8,11 +8,10 @@ class Feedback:
 
 class Cliente:
     def __init__(self, data, name=None):
-        if data is not None:
-            self.id = data["id"] if data != None else str(uuid.uuid4())
-            self.name = data["name"] if data != None else name
-            self.frec_visit = data["frec_visit"] if data != None else 0
-            self.feedback : list[dict] = data["feedback"] if data != None else []
+        self.id = data["id"] if data != None else str(uuid.uuid4())
+        self.name = data["name"] if data != None else name
+        self.frec_visit = data["frec_visit"] if data != None else 0
+        self.feedback : list[dict] = data["feedback"] if data != None else []
     
     def register(self):
         try:

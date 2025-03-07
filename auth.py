@@ -1,4 +1,4 @@
-import bcrypt
+import bcrypt, sys
 from handledb import DB
 
 class UserNotFound(Exception):
@@ -43,10 +43,16 @@ class AuthUser:
             raise UserNotFound("No se ha encontrado el usuario")
         else:
             passwHashed = userDB["password"].encode("utf-8")
-            
             self.__isLogin = bcrypt.checkpw(passw, passwHashed)
 
         if not self.__isLogin: raise AuthFail("Contraceña o usuario no coincide")
         return self.__isLogin
+    
+    def logout(self):
+        self.__isLogin = False
 
-
+if len(sys.argv) > 1:
+    if sys.argv[1] == "create":
+        user = input("Ingresa el usuario: ")
+        passw = input("Ingresa la contraceña: ")
+        Auth.createUser(user, passw)

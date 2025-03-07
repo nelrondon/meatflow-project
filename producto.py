@@ -4,6 +4,7 @@ class Producto:
         self.category = data["category"]
         self.price_buy = data["price_buy"]
         self.price_sell = data["price_sell"]
+        self.exp_date = data["exp_date"]
         self.stock = data["stock"]
         self.type = data["type"]
 
