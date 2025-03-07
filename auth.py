@@ -10,7 +10,7 @@ class UserExist(Exception):
 
 class Auth:
     @staticmethod
-    def createUser(user, pw):
+    def createUser(name, user, pw):
         module = "auth_data"
 
         if DB.exists(module):
@@ -22,7 +22,10 @@ class Auth:
         salt = bcrypt.gensalt()
         passwHashed = bcrypt.hashpw(passw, salt)
 
-        user = {"user": user, "password": passwHashed.decode("utf-8")}
+        user = {
+            "name": name,
+            "user": user, 
+            "password": passwHashed.decode("utf-8")}
         return DB.save(module, user)
 
 class AuthUser:
@@ -53,6 +56,7 @@ class AuthUser:
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "create":
+        name = input("Ingresa el nombre: ")
         user = input("Ingresa el usuario: ")
         passw = input("Ingresa la contraceña: ")
-        Auth.createUser(user, passw)
+        Auth.createUser(name, user, passw)

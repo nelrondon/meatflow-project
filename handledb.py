@@ -27,8 +27,16 @@ class DB:
     def getOneBy(module, key, value):
         data = DB.get(module)
         for _ in data:
-            if _[key] == value:
+            if str(_[key]).lower() == str(value).lower():
                 return _
+    @staticmethod
+    def searchBy(module, key, value):
+        data = DB.get(module)
+        result = []
+        for _ in data:
+            if str(value).lower() in str(_[key]).lower():
+                result.append(_)
+        return result
                 
     @staticmethod
     def getAllBy(module, key, value):
@@ -69,7 +77,7 @@ class DB:
         data = DB.get(module)
 
         for _ in data:
-            if _[key] == value:
+            if str(_[key]).lower() == str(value).lower():
                 _.update(newdata)
 
         with open(path, "w") as file:
