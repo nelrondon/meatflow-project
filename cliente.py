@@ -1,15 +1,12 @@
 import datetime, uuid
-from handledb import DB
+from handledb import DB, FieldDb
 
-class Feedback:
+class Feedback (FieldDb):
     def __init__(self, msg):
         self.message = msg
         self.date = str(datetime.datetime.now())
-    
-    def export(self):
-        return self.__dict__
 
-class Cliente:
+class Cliente (FieldDb):
     def __init__(self, data=None, name=None):
         self.id = data["id"] if data != None else str(uuid.uuid4())
         self.name = data["name"] if data != None else name
