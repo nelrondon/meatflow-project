@@ -1,5 +1,9 @@
 import json, os
 
+class FieldDb:
+    def export(self):
+        return self.__dict__
+
 class DB:
     @staticmethod
     def getPath(module):

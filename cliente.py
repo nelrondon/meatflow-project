@@ -1,7 +1,7 @@
 import datetime, uuid
-from handledb import DB
+from handledb import DB, FieldDb
 
-class Feedback:
+class Feedback (FieldDb):
     def __init__(self, msg):
         self.message = msg
         self.date = str(datetime.datetime.now())
