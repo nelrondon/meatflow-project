@@ -60,13 +60,11 @@ Un sistema modular en Python que:
 ## Instalación
 
 1. Clona el repositorio:
-
    ```bash
    git clone https://github.com/nelrondon/meatflow-project.git
    ```
 
 2. Instala las dependencias:
-
    ```bash
    pip install requirements.txt
    ```
