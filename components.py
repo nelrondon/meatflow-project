@@ -532,7 +532,8 @@ class Sale(SecForm):
         self.date.set(str(datetime.now().date()))
 
         self.pay = tk.StringVar()
-        self.attention = tk.IntVar()
+        self.bill = tk.StringVar()
+        self.bill.set(Venta.num_bill())
 
         # Lista de productos comprados
         self.products_list = []
@@ -544,11 +545,19 @@ class Sale(SecForm):
         
         def registrar_venta():
             if self.pay.get() != "" and self.products_list != []:
+                prods = []
+                for prod in self.products_list:
+                    name = prod.split("x")[0][:-1]
+                    amount = prod.split("x")[1]
+                    prods.append({
+                        "name": name,
+                        "amount": int(amount)
+                    })
+
                 venta = Venta(
                     self.id.get(),
                     self.pay.get(),
-                    self.attention.get(),
-                    self.products_list
+                    prods
                 )
                 venta.register()
 
@@ -573,7 +582,7 @@ class Sale(SecForm):
         Widget.Caption(fr, "Método de pago:")
         op = ["Efectivo", "Tarjeta", "Transferencia"]
         ttk.OptionMenu(fr, self.pay, op[0], *op, style="Basic.TMenubutton").pack()
-        Widget.InputGrid(fr2, "Valoracion de atencion:", self.attention, [2, 0], width=16)
+        Widget.InputGrid(fr2, "N° de Billete:", self.bill, [2, 0], width=16, state="readonly", js="center")
         
         fr3 = tk.Frame(self.toplevel); fr3.pack()
 
@@ -653,7 +662,7 @@ class ReporteForm(Form):
         ftfr = tk.Frame(self.toplevel)
         tk.Label(ftfr, text="Producto: ").pack(side="left")
         tk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
-        tk.Button(ftfr, text="Filtrar", relief="groove", font=("Inter", 9), command=self.handleFilter).pack(side="left")
+        tk.Button(ftfr, text="Filtrar", font=("Inter", 9), command=self.handleFilter).pack(side="left")
         ftfr.pack(pady=(0, 20))
 
         # Contenedor de reportes
@@ -667,7 +676,6 @@ class ReporteForm(Form):
         self.graph_frame = tk.Frame(self.toplevel)
         self.graph_frame.pack()
 
-        self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
         self.setData()
 
     def cargar_datos_reporte(self):
@@ -710,16 +718,14 @@ class ReporteForm(Form):
         ventas_data = DB.get("ventas")
         ventas_filtradas = {}
 
-        for venta in ventas_data:
-            for item in venta["productos_vendidos"]:
-                nombre_producto = item["producto"].lower()
-                if filtro in nombre_producto:
-                    ventas_filtradas[item["producto"]] = ventas_filtradas.get(item["producto"], 0) + item["cantidad"]
+        print(ventas_data)
 
-        if ventas_filtradas:
-            pass
-        else:
-            pass
+        for venta in ventas_data:
+            for item in venta["productos"]:
+                nombre_producto = item["name"].lower()
+                if filtro in nombre_producto:
+                    ventas_filtradas[item["name"]] = ventas_filtradas.get(item["name"], 0) + item["amount"]
+
         self.setData(ventas_filtradas)
 
     def setData(self, data=None):

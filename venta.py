@@ -4,9 +4,9 @@ from tkinter import messagebox
 import datetime
 
 class Venta:
-    def __init__(self, id_client, method, rate, produc):
+    def __init__(self, id_client, method, produc, rate=10):
         result = DB.getOneBy("clientes", "id", id_client)
-        self.num_bill = self.num_bill()
+        self.num_bill = Venta.num_bill()
         self.date = f"{datetime.datetime.now()}"
         self.client = {}
         if result != None:    
@@ -22,7 +22,8 @@ class Venta:
         reg = {prop: getattr(self, prop) for prop in props}
         DB.save("ventas", reg)
     
-    def num_bill(self):
+    @staticmethod
+    def num_bill():
         num_bill_actual = DB.searchBy("ventas", "num_bill", f"")
         if num_bill_actual != [] and num_bill_actual != None:
             new_num_bill = int(num_bill_actual[-1]["num_bill"]) + 1

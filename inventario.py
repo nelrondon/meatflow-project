@@ -1,10 +1,13 @@
-from producto import Producto
+from handledb import DB
 
 class Inventario:
     def __init__(self):
-        self.products : list[Producto] = []
-        self.min_stock : Producto = None
+        self.products = self.load()
+        self.products_min_stock = self.verifyMinStock()
     
+    def load(self):
+        return DB.get("productos")
+
     def add(self):
         pass
 
@@ -12,10 +15,16 @@ class Inventario:
         pass
 
     def verifyMinStock(self):
-        pass
+        minStock = 10
+        minStockList = []
+        for prod in self.products:
+            if prod["stock"] < minStock:
+                minStockList.append(prod)
+        return minStockList
 
     def alertExpire(self):
         pass
 
     def trendStock(self):
         pass
+

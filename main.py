@@ -29,11 +29,10 @@ class MainApp:
         buyForm = BuyForm(self)
         clientForm = Client(self)
         reportForm = ReporteForm(self)
-        # loginForm.hide()
-
+        loginForm.hide()
 
         # clientForm.show()
-        # reportForm.show()
+        reportForm.show()
 
         #? MENÚ DE NAVEGACIÓN
         nav_menu = tk.Menu(self.ventana)
