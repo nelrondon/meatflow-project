@@ -1,75 +1,142 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+from cliente import Cliente
+from datetime import datetime
 
-from auth import AuthUser
+from auth import AuthUser, Auth
 from handledb import DB
 
 COLOR1 = "#225270"
 COLOR1_SOFT = "#C4DDED"
 
+
 class Widget:
     @staticmethod
     def MainLabel(parent, text):
-        tk.Label(parent, text=text,foreground=COLOR1, font=("Inter ExtraBold", 24)
+        ttk.Label(parent, text=text,foreground=COLOR1, font=("Inter ExtraBold", 24)
         ).pack(padx=90, pady=(30, 0))
 
     @staticmethod
     def SecLabel(parent, text):
-        tk.Label(parent, text=text, font=("Inter", 10)
+        ttk.Label(parent, text=text, font=("Inter", 10)
         ).pack()
 
     @staticmethod
-    def Caption(parent, text):
-        tk.Label(parent, text=text, foreground=COLOR1, font=("Inter SemiBold", 10)
-        ).pack()
+    def Caption(parent, text, side="top"):
+        ttk.Label(parent, text=text, foreground=COLOR1, font=("Inter SemiBold", 10)
+        ).pack(side=side)
     
     @staticmethod
     def CaptionGrid(parent, text, arr, cspan=1, rspan=1):
-        tk.Label(parent, text=text, foreground=COLOR1, font=("Inter SemiBold", 10)
+        ttk.Label(parent, text=text, foreground=COLOR1, font=("Inter SemiBold", 10)
         ).grid(column=arr[0], row=arr[1], columnspan=cspan, rowspan=rspan, sticky="w")
 
     @staticmethod
-    def Input(parent, text, var, fs=11):
+    def Input(parent, text, var, fs=10, js="left", width=None):
         Widget.Caption(parent, text)
-        tk.Entry(parent, textvariable=var, font=("Inter", fs)
+        ttk.Entry(parent, justify=js, textvariable=var, width=width, font=("Inter", fs)
         ).pack()
 
     @staticmethod
-    def InputGrid(parent, text, var, arr, cspan=1, rspan=1, width=None, fs=11):
-        fr = tk.Frame(parent)
+    def InputGrid(parent, text, var, arr, cspan=1, rspan=1, width=None, fs=10, js="left", state="normal"):
+        fr = ttk.Frame(parent)
         Widget.CaptionGrid(fr, text, arr, cspan, rspan)
         et = None
         if width:
-            et = tk.Entry(fr, textvariable=var, font=("Inter", fs), width=width)
+            et = ttk.Entry(fr, state=state, justify=js, textvariable=var, font=("Inter", fs), width=width)
         else:
-            et = tk.Entry(fr, textvariable=var, font=("Inter", fs))
+            et = ttk.Entry(fr, state=state, justify=js, textvariable=var, font=("Inter", fs))
 
         et.grid(column=arr[0], row=(arr[1]+1), columnspan=cspan, rowspan=rspan)
         fr.grid(column=arr[0], row=arr[1], padx=8)
 
-class Form:
-    def __init__(self, main_window, title):
-        self.main_window = main_window
-        self.toplevel = tk.Toplevel(main_window)
+class MsgBox:
+    def PopUp(self, mode, title, msg):
+        if mode=="info":
+            messagebox.showinfo( 
+                parent=self.toplevel,
+                title=title, 
+                message=msg
+            )
+        elif mode=="error":
+            messagebox.showerror(
+                parent=self.toplevel,
+                title=title, 
+                message=msg
+            )
+        elif mode=="warning":
+            messagebox.showwarning(
+                parent=self.toplevel,
+                title=title, 
+                message=msg
+            )
+
+class Form (MsgBox):
+    def __init__(self, app, title):
+        self.app = app
+        self.main_window = self.app.ventana
+        self.toplevel = tk.Toplevel(self.main_window)
+        self.toplevel.iconbitmap("assets/favicon.ico")
+        self.toplevel.attributes("-topmost", True)
         self.toplevel.title(f"{title} - MeatFlow")
         Widget.MainLabel(self.toplevel, title)
         self.toplevel.withdraw()  # Inicialmente oculto
+
+        self.buttonStyle = ttk.Style()
+        self.buttonStyle.configure("TButton", relief="groove", font=("Inter SemiBold", 10), foreground=COLOR1)
+
         self.toplevel.resizable(False, False)
-
-
-        self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.hide)
+        # self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
 
     def show(self):
         self.toplevel.deiconify()  # Mostrar el formulario
 
     def hide(self):
-        self.toplevel.destroy()  # Mostrar el formulario
+        self.toplevel.withdraw()  # Mostrar el formulario
 
-    #- NOTA: ESTE METODO ES SOLO PARA EL <<LOGINFORM>>, CAMBIARLO ANTES DE PRODUCC
     def handleQuit(self):
         self.toplevel.destroy()
         self.main_window.destroy()
+
+class SecForm (MsgBox):
+    def __init__(self, form, title):
+        self.form = form
+        self.toplevel = tk.Toplevel(self.form.main_window)
+        self.toplevel.title(f"{title} - MeatFlow")
+        self.toplevel.attributes("-topmost", True)
+        Widget.MainLabel(self.toplevel, title)
+        self.toplevel.withdraw()  # Inicialmente oculto
+
+        self.buttonStyle = ttk.Style()
+        self.buttonStyle.configure("TButton", relief="groove", font=("Inter SemiBold", 10), foreground=COLOR1)
+
+        self.toplevel.resizable(False, False)
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.hide)
+
+    def show(self):
+        self.toplevel.deiconify()  # Mostrar el formulario
+
+    def hide(self):
+        self.toplevel.withdraw()  # Mostrar el formulario
+
+class ChangePasswForm(Form):
+    def __init__(self, app):
+        super().__init__(app, "Cambiar contraseña")
+        self.newPassw = tk.StringVar()
+
+        Widget.SecLabel(self.toplevel, "Ingresa tu nueva contraseña")
+
+        fr = tk.Frame(self.toplevel); fr.pack(pady=(10, 20))
+
+        Widget.Input(fr, "Nueva contraseña:", self.newPassw, js="center")
+        
+        ttk.Button(fr, text="Cambiar contraseña", width=20, command=self.changePassw).pack(pady=20)
+
+    def changePassw(self):
+            if Auth.changePassw(self.app.user["user"], self.newPassw.get()):
+                self.hide()
 
 class LoginForm (Form):
     def __init__(self, main_window):
@@ -96,18 +163,22 @@ class LoginForm (Form):
         fBtns.pack(pady=(30, 30))
 
         Widget.Caption(fUser, "Usuario:")
-        tk.Entry(fUser, textvariable=self.userVar, justify="center", font=("Inter", 11)
+        ttk.Entry(fUser, textvariable=self.userVar, justify="center", font=("Inter", 11)
         ).pack()
         
         Widget.Caption(fPassw, "Contraseña:")
-        tk.Entry(fPassw, textvariable=self.passVar, justify="center", show="*", font=("Inter", 11)
+        ttk.Entry(fPassw, textvariable=self.passVar, justify="center", show="*", font=("Inter", 11)
         ).pack()
 
         # Button (Limpiar)
-        tk.Button(fBtns, foreground=COLOR1, text="Limpiar", relief="groove", width=10, font=("Inter", 11), command=self.handleClean).grid(column=1, row=0, padx=5)
+        ttk.Button(fBtns, text="Limpiar", width=10, command=self.handleClean).grid(column=1, row=0, padx=5)
         # Button (Ingresar)
-        tk.Button(fBtns, foreground=COLOR1, text="Ingresar...", relief="groove", width=15, font=("Inter Bold", 11), command=self.handleLoginSubmit).grid(column=0, row=0, padx=5)
+        ttk.Button(fBtns, text="Ingresar...", width=15, command=self.handleLoginSubmit).grid(column=0, row=0, padx=5)
         self.toplevel.bind("<Return>", self.handleLoginSubmit)
+
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
+        self.show()
+        
 
     def userLogout(self):
         self.user.logout()
@@ -116,17 +187,24 @@ class LoginForm (Form):
         if self.userVar.get() and self.passVar.get():
             self.user = AuthUser(self.userVar.get())
             try:
-                if self.user.login(self.passVar.get()):
+                result = self.user.login(self.passVar.get())
+                if result:
+                    self.app.user["user"] = result["user"]
+                    self.app.user["name"].set(result["name"])
                     self.hide()
                     self.main_window.deiconify()
             except Exception as e:
-                messagebox.showwarning("Error al iniciar sesión", str(e))
+                messagebox.showwarning(
+                    parent=self.toplevel,
+                    title="Error al iniciar sesión", 
+                    message=str(e)
+                )
 
     def handleClean(self):
         self.userVar.set("")
         self.passVar.set("")
 
-class ProductForm (Form):
+class ProductForm (SecForm):
     def __init__(self, main_window):
         super().__init__(main_window, "Productos")
         Widget.SecLabel(self.toplevel, "Añade un nuevo producto")
@@ -168,7 +246,7 @@ class ProductForm (Form):
         Widget.InputGrid(fr4, "Stock:", self.stockVar, [0, 0], width=8)
         Widget.InputGrid(fr4, "Fecha de Vencimiento:", self.expVar, [1, 0], width=20)
 
-        tk.Button(fr5, foreground=COLOR1, text="Añadir", relief="groove", width=20, height=2, font=("Inter Bold", 10), command=self.addProduct
+        ttk.Button(fr5,text="Añadir",width=20, command=self.addProduct
         ).grid(column=0, row=0)
 
     def addProduct(self):
@@ -183,13 +261,25 @@ class ProductForm (Form):
                 "type": self.typeVar.get(),
             }
             try:
-                DB.save("productos", data)
-                messagebox.showinfo("Producto agregado!", "Se agrego correctamente!")
+                self.form.addProduct(data)
+                self.PopUp("info", 
+                    parent=self.toplevel,
+                    title="Producto agregado!", 
+                    message="Se agrego correctamente!"
+                    )
                 self.setDefault()
-            except:
-                messagebox.showwarning("Error en producto!", "No se completo el registro!")
+            except Exception as e:
+                messagebox.showwarning(
+                    parent=self.toplevel,
+                    title="Error en producto!", 
+                    message="No se completo el registro!"
+                )
         else:
-            messagebox.showwarning("Campos requeridos", "Todos los campos son requeridos")
+            messagebox.showwarning(
+                parent=self.toplevel,
+                title="Campos requeridos", 
+                message="Todos los campos son requeridos"
+            )
 
     def setDefault(self):
         self.nameVar.set("")
@@ -217,8 +307,8 @@ class StockForm (Form):
         tk.Label(self.toplevel, text="Filtros").pack()
         ftfr = tk.Frame(self.toplevel)
         tk.Label(ftfr, text="Nombre: ").pack(side="left")
-        tk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
-        tk.Button(ftfr, text="Filtrar", relief="groove", font=("Inter", 9), command=handleFilter).pack(side="left")
+        ttk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
+        ttk.Button(ftfr, text="Filtrar", command=handleFilter).pack(side="left")
         ftfr.pack(pady=(0, 20))
 
         #? COMPONENTE DE LISTA INVENTARIO
@@ -249,8 +339,10 @@ class StockForm (Form):
     
     def setData(self, data=None):
         self.clearCanvas()
-        if data == None:
+        if data == []:
+            messagebox.showerror("No existen coincidencias", "No hay productos en la base de datos, que cumplan con la petición")
             data = self.loadFromDB()
+            
         gap = 5
         tk.Label(self.hd,font=("Inter Semibold", 10), text="Nombre:").grid(column=0, row=0, padx=gap, sticky="w")
         tk.Label(self.hd,font=("Inter Semibold", 10), text="Categoria:").grid(column=1, row=0, padx=gap)
@@ -274,34 +366,228 @@ class StockForm (Form):
         for wg in self.hd.winfo_children():
             wg.destroy()
 
-class SupplierForm (Form):
-    def __init__(self, main_window):
-        super().__init__(main_window, "Proveedores")
-        Widget.SecLabel(self.toplevel, "Registra a un nuevo Proveerdor")
+class BuyForm (Form):
+    def __init__(self, form):
+        super().__init__(form, "Compra")
+        Widget.SecLabel(self.toplevel, "Registra una nueva compra")
 
-        fr1 = tk.Frame(self.toplevel); fr1.pack(pady=5)
-        fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5)
-        fr3 = tk.Frame(self.toplevel); fr3.pack(pady=5)
-        fr4 = tk.Frame(self.toplevel); fr4.pack(pady=5)
-        fr5 = tk.Frame(self.toplevel); fr5.pack(pady=5)
+        self.productForm = ProductForm(self)
+        self.products = []
+
+        fr0 = tk.Frame(self.toplevel); fr0.pack(pady=5)
+        fr1 = tk.Frame(self.toplevel); fr1.pack(pady=5, padx=80)
+        fr2 = tk.Frame(fr1); fr2.grid(column=0, row=0, padx=10)
+        fr3 = tk.Frame(fr1); fr3.grid(column=1, row=0, padx=10)
+        footer = tk.Frame(self.toplevel); footer.pack(pady=(20, 40))
 
         self.nameVar = tk.StringVar()
-        Widget.InputGrid(fr2, "Nombre proveedor:", self.nameVar, [0,0])
+        self.timeDVar = tk.IntVar()
+        self.prodSearch = tk.StringVar()
+        self.costoVar = tk.IntVar()
 
-        def handleSearch(event):
-            self.prodNameList.delete(0, tk.END)
+        Widget.InputGrid(fr0, "Nombre proveedor:", self.nameVar, [0,0])
+        
+        Widget.InputGrid(fr0, "Tiempo de entrega: (min)", self.timeDVar, [1,0], width=8)
+
+        Widget.CaptionGrid(fr2, "Productos Comprados:", [0, 2])
+        self.prodNameList = tk.Listbox(fr2, height=7)
+
+        ttk.Button(fr3, text="Agregar producto", command=self.showProductForm).pack()
+        ttk.Button(fr3, text="Eliminar selección", command=self.deleteProduct).pack(pady=(0, 20))
+
+        Widget.Caption(fr3, "Costo Total")
+        ttk.Entry(fr3, state="readonly", textvariable=self.costoVar, font=("Inter", 10), width=10).pack()
+
+        ttk.Button(footer, text="Registrar compra", command=self.addBuy, width=20).pack()
+
+        self.prodNameList.grid(column=0, row=3)
+
+    def addProduct(self, data):
+        self.products.append(data)
+        self.prodNameList.insert(tk.END, data["name"])
+        self.updateCostoTotal()
+    
+    def deleteProduct(self):
+        indice = self.prodNameList.curselection()[0]
+        del self.products[indice]
+        self.prodNameList.delete(indice)
+        self.updateCostoTotal()
+
+    def updateCostoTotal(self):
+        costo = 0
+        for _ in self.products:
+            costo += (_["price_buy"] * _["stock"])
+        self.costoVar.set(costo)
+
+    def addBuy(self):
+        # Datos proveedor
+        nameSupp = self.nameVar.get()
+        timeDel = self.timeDVar.get()
+        
+        if nameSupp != "" and timeDel != 0 and len(self.products):
+            self.PopUp(
+                "info",
+                "Compra realizada",
+                "Se añadio una nueva compra (NOTA NO SE HA AGREGADO A LA BASE DE DATOS)"
+            )
+        else:
+            self.PopUp(
+                "warning",
+                "Campos requeridos",
+                "Añade suficientes datos para procesar la compra"
+            )
+
             
 
-        self.prodNameList = tk.Listbox(fr2, height=6)
-        self.prodSearch = tk.StringVar()
-        Widget.CaptionGrid(fr2, "Producto suministrado:", [0, 2])
-        entrySearch = tk.Entry(fr2, textvariable=self.prodSearch, font=("Inter", 10))
-        entrySearch.grid(column=0, row=3)
-        entrySearch.bind("<KeyPress>", handleSearch)
+    def showProductForm(self):
+        self.productForm.show()
 
-        prods = DB.get("productos")
-        for prod in prods:
-            self.prodNameList.insert(tk.END, prod["name"])
+class Client(Form):
+    def __init__(self, main_window):
+        super().__init__(main_window, "Registro Cliente")
+        self.name = tk.StringVar()
+        self.last_name = tk.StringVar()
+        self.id = tk.StringVar()
+        self.feedback = tk.StringVar()
 
-        self.prodNameList.grid(column=0, row=4)
+        self.sale = Sale(self)
 
+        self.sale.show()
+        
+        def validar_cliente(bol):
+            result = DB.getOneBy("clientes", "id", self.id.get())
+            if result != None and self.id.get() == result["id"]:
+                name, last_name = result["name"].split(" ",1)
+                self.name.set(name)
+                self.last_name.set(last_name)
+                self.feedback.set("")
+                return False
+            else:
+                if bol:
+                    self.PopUp("info", "Cliente", "Cliente no registrado")
+                return True
+        
+        def registrar():
+            if validar_cliente(False):
+                if self.id.get() != "" and self.last_name.get() != "" and self.name.get() != "":
+                        data = {
+                            "id": self.id.get(),
+                            "name": f"{self.name.get()} {self.last_name.get()}",
+                            "frec_visit": 1,
+                            "feedback": self.feedback.get()
+                        }
+                        cliente = Cliente(data)
+                        cliente.register()
+                else: 
+                    self.PopUp("info", "Cliente", "Debe llenar todos los campos")
+            else:
+                self.PopUp("info", "Cliente", "Cliente ya registrado")
+                
+        def showSaleForm():
+            if self.id.get() != "" and self.last_name.get() != "" and self.name.get() != "":
+                if not validar_cliente(True):
+                    self.sale.show()
+            else:
+                if self.id.get() != "":
+                    self.PopUp("info", "Cliente", "Consulte el cliente")
+                else:
+                    self.PopUp("info", "Cliente", "Ingrese la V- del cliente")
+                
+        fr1 = tk.Frame(self.toplevel); fr1.pack(pady=10, padx=30)
+        fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5)
+        fr3 = tk.Frame(self.toplevel); fr3.pack(pady=5)
+        fr4 = tk.Frame(self.toplevel); fr4.pack(pady=(20, 5))
+        fr5 = tk.Frame(self.toplevel); fr5.pack(pady=(0, 30))
+        
+        Widget.Caption(fr1, "Cedula Del Cliente: ", "left")
+        ttk.Entry(fr1, textvariable=self.id).pack(side="left", padx=6)
+        
+        ttk.Button(fr1, text="Ver Cliente", command = lambda:validar_cliente(True)).pack(side="left")
+
+        
+        Widget.InputGrid(fr2, "Nombre del cliente:", self.name, [0, 0], width=16)
+        Widget.InputGrid(fr2, "Apellido del cliente:", self.last_name, [1, 0], width=16)
+        
+        Widget.CaptionGrid(fr3, "Comentario:", [0, 0])
+        entryfeedback = ttk.Entry(fr3, textvariable=self.feedback, font=("Inter", 10),width=30)
+        entryfeedback.grid(column=0, row=3, ipady = 10)
+        ttk.Button(fr4, text="Añadir Cliente", width=20,command=registrar).grid(column=0, row=0)
+        ttk.Button(fr5, text="Ir al carrito", width=20,command=showSaleForm).grid(column=0, row=0)
+
+class Sale(SecForm):
+    def __init__(self, main_window):
+        super().__init__(main_window, "Orden de Venta")
+        self.date = tk.StringVar()
+        self.date.set(str(datetime.now().date()))
+
+        self.pay = tk.StringVar()
+        self.attention = tk.IntVar()
+
+        # Lista de productos comprados
+        self.products_list = []
+        self.id = self.form.id
+        self.name = self.form.name
+        self.last_name = self.form.last_name
+        
+        def registrar_venta():
+            if self.pay.get() != "" and self.products_list != []:
+                
+                self.PopUp("info", "Ventas", "Venta registrada")
+            else:
+                self.PopUp("error", "Error", "Debe llenar todos los campos")
+        
+        fr1 = tk.Frame(self.toplevel); fr1.pack(pady=10)
+        fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5, padx=40)
+        
+        
+        # Mostrar el cliente
+        tk.Label(fr1, text="Cliente:").pack(side="left")
+        tk.Label(fr1, textvariable=self.name).pack(side="left", padx=5)
+        tk.Label(fr1, textvariable=self.last_name).pack(side="left", padx=5)
+
+        # Campos de entrada
+        Widget.InputGrid(fr2, "Fecha:", self.date, [0, 0], width=16, state="readonly", js="center")
+        Widget.InputGrid(fr2, "Método de pago:", self.pay, [1, 0], width=16)
+        Widget.InputGrid(fr2, "Valoracion de atencion:", self.attention, [2, 0], width=16)
+
+        # Sección de productos
+        fr_products = tk.Frame(self.toplevel)
+        fr_products.pack(pady=5)
+
+        tk.Label(fr_products, text="Producto:").pack(side="left")
+        self.product_entry = ttk.Entry(fr_products, font=("Inter", 10))
+        self.product_entry.pack(side="left", padx=5)
+
+        tk.Label(fr_products, text="Cantidad:").pack(side="left")
+        self.quantity_entry = ttk.Entry(fr_products, font=("Inter", 10), width=5)
+        self.quantity_entry.pack(side="left", padx=5)
+
+        ttk.Button(fr_products, text="Agregar", command=self.add_product).pack(side="left")
+
+        # Caja de texto para mostrar productos agregados
+        self.products_display = tk.Text(self.toplevel, height=10, width=40, state="disabled")
+        self.products_display.pack(pady=10)
+        fr_facturar = tk.Frame(self.toplevel); fr_facturar.pack(pady=25)
+        ttk.Button(fr_facturar,text="Facturar",width=20, command=registrar_venta
+        ).grid(column=0, row=0)
+        
+    def add_product(self):
+        """Agrega un producto con cantidad a la lista y lo muestra en la caja de texto."""
+        product = self.product_entry.get().strip()
+        quantity = self.quantity_entry.get().strip()
+
+        if product and quantity.isdigit() and int(quantity) > 0:
+            product_entry = f"{product} x{quantity}"  # Formato "Jamón x2"
+            self.products_list.append(product_entry)
+
+            # Mostrar en la caja de texto
+            self.products_display.config(state="normal")
+            self.products_display.insert(tk.END, f"{product_entry}\n")
+            self.products_display.config(state="disabled")
+
+            # Limpiar los campos de entrada
+            self.product_entry.delete(0, tk.END)
+            self.quantity_entry.delete(0, tk.END)
+        else:
+            print("⚠️ Error: Ingresa un producto y una cantidad válida.") 
+         
