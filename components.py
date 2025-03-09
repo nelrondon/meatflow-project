@@ -1,10 +1,13 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-
+from venta import Venta
 from auth import AuthUser
 from handledb import DB
-
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+from reporte import Reporte
+from inventario import Inventario
 COLOR1 = "#225270"
 COLOR1_SOFT = "#C4DDED"
 
@@ -305,3 +308,127 @@ class SupplierForm (Form):
 
         self.prodNameList.grid(column=0, row=4)
 
+
+
+
+class ReporteForm(Form):
+    def __init__(self, main_window):
+        super().__init__(main_window, "Reporte de Ventas")
+        Widget.SecLabel(self.toplevel, "Visualiza el reporte de ventas y tendencias")
+
+        # Cargar datos usando handledb.DB
+        self.reporte = self.cargar_datos_reporte()
+
+        # Filtro de búsqueda
+        self.namefl = tk.StringVar()
+        tk.Label(self.toplevel, text="Filtros").pack()
+        ftfr = tk.Frame(self.toplevel)
+        tk.Label(ftfr, text="Producto: ").pack(side="left")
+        tk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
+        tk.Button(ftfr, text="Filtrar", relief="groove", font=("Inter", 9), command=self.handleFilter).pack(side="left")
+        ftfr.pack(pady=(0, 20))
+
+        # Contenedor de reportes
+        self.report_frame = tk.Frame(self.toplevel)
+        self.report_frame.pack(pady=(0, 20))
+
+        # Botón para graficar tendencias
+        tk.Button(self.toplevel, text="Graficar Tendencias", command=self.graficar_tendencias).pack()
+
+        # Contenedor del gráfico
+        self.graph_frame = tk.Frame(self.toplevel)
+        self.graph_frame.pack()
+
+        self.setData()
+
+    def cargar_datos_reporte(self):
+        """Carga solo los productos y cantidades vendidos desde la base de datos JSON y crea el objeto Reporte."""
+
+        ventas_data = DB.get("ventas")  # Cargar ventas desde JSON 
+        if not ventas_data:
+            pass
+
+        # Extraer solo productos y cantidades
+        ventas = []
+        for data in ventas_data:
+            try:
+                venta = Venta(
+                    fecha=data["fecha"],
+                    productos_vendidos=data["productos_vendidos"],
+                    metodo_pago=data["metodo_pago"],
+                    puntuacion_atencion=data["puntuacion_atencion"]
+                )
+                ventas.append(venta)
+            except KeyError as e:
+                pass
+        inventario = Inventario()
+        inventario.products = DB.get("productos")
+        if not inventario.products:
+            pass
+
+        return Reporte(inventario, ventas)
+
+    def handleFilter(self):
+    
+        """Filtra los productos vendidos según el nombre ingresado en la barra de búsqueda."""
+        filtro = self.namefl.get().strip().lower()
+
+        if not filtro:
+            self.setData(self.reporte.generar_reporte_ventas())
+            return
+
+        # Obtener todas las ventas
+        ventas_data = DB.get("ventas")
+        ventas_filtradas = {}
+
+        for venta in ventas_data:
+            for item in venta["productos_vendidos"]:
+                nombre_producto = item["producto"].lower()
+                if filtro in nombre_producto:
+                    ventas_filtradas[item["producto"]] = ventas_filtradas.get(item["producto"], 0) + item["cantidad"]
+
+        if ventas_filtradas:
+            pass
+        else:
+            pass
+        self.setData(ventas_filtradas)
+
+    def setData(self, data=None):
+        """Muestra el reporte de ventas en la interfaz."""
+        for widget in self.report_frame.winfo_children():
+            widget.destroy()  # Limpia el frame antes de agregar nuevos datos
+
+        if data is None:
+            data = self.reporte.generar_reporte_ventas()
+
+        # Encabezado
+        tk.Label(self.report_frame, text="Producto", font=("Inter Semibold", 10)).grid(row=0, column=0)
+        tk.Label(self.report_frame, text="Cantidad Vendida", font=("Inter Semibold", 10)).grid(row=0, column=1)
+
+        # Mostrar los productos
+        for i, (producto, cantidad) in enumerate(data.items()):
+            bg = COLOR1_SOFT if i%2==0 else None
+            tk.Label(self.report_frame,background=bg, text=producto, font=("Inter", 9)).grid(row=i + 1, column=0)
+            tk.Label(self.report_frame,background=bg, text=str(cantidad), font=("Inter", 9)).grid(row=i + 1, column=1)
+
+
+    def graficar_tendencias(self):
+        """Genera y muestra un gráfico de tendencias dentro de Tkinter."""
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        tendencias = self.reporte.graficar_tendencias()
+
+        for producto, valores in tendencias.items():
+            ax.plot(valores['fechas'], valores['cantidades'], label=producto)
+
+        ax.set_xlabel('Fecha')
+        ax.set_ylabel('Cantidad Vendida')
+        ax.set_title('Tendencias de Ventas')
+        ax.legend()
+        ax.tick_params(axis='x', rotation=45)
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack()

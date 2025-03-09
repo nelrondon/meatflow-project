@@ -1,0 +1,209 @@
+[
+  {
+    "name": "Asado de Ternera",
+    "category": "Carniceria",
+    "price_buy": 1500.0,
+    "price_sell": 2500.0,
+    "exp_date": "2023-11-10",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Lomo de Cerdo",
+    "category": "Carniceria",
+    "price_buy": 1200.0,
+    "price_sell": 2000.0,
+    "exp_date": "2023-11-12",
+    "stock": 25,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Milanesa de Ternera",
+    "category": "Carniceria",
+    "price_buy": 1800.0,
+    "price_sell": 3000.0,
+    "exp_date": "2023-11-15",
+    "stock": 40,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Chorizo",
+    "category": "Carniceria",
+    "price_buy": 1000.0,
+    "price_sell": 1800.0,
+    "exp_date": "2023-11-18",
+    "stock": 50,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Bondiola",
+    "category": "Carniceria",
+    "price_buy": 1300.0,
+    "price_sell": 2200.0,
+    "exp_date": "2023-11-20",
+    "stock": 35,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Punta de Anca",
+    "category": "Carniceria",
+    "price_buy": 1400.0,
+    "price_sell": 2400.0,
+    "exp_date": "2023-11-22",
+    "stock": 45,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Bife de Chorizo",
+    "category": "Carniceria",
+    "price_buy": 1600.0,
+    "price_sell": 2600.0,
+    "exp_date": "2023-11-25",
+    "stock": 50,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Tapa de Anca",
+    "category": "Carniceria",
+    "price_buy": 1500.0,
+    "price_sell": 2500.0,
+    "exp_date": "2023-11-28",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Lomo de Res",
+    "category": "Carniceria",
+    "price_buy": 1700.0,
+    "price_sell": 2700.0,
+    "exp_date": "2023-12-01",
+    "stock": 20,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Carne Molida",
+    "category": "Carniceria",
+    "price_buy": 1000.0,
+    "price_sell": 1800.0,
+    "exp_date": "2023-12-03",
+    "stock": 60,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Tapa de Lomo",
+    "category": "Carniceria",
+    "price_buy": 1600.0,
+    "price_sell": 2600.0,
+    "exp_date": "2023-12-05",
+    "stock": 40,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Cuadril",
+    "category": "Carniceria",
+    "price_buy": 1400.0,
+    "price_sell": 2400.0,
+    "exp_date": "2023-12-08",
+    "stock": 35,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Punta de Cuadril",
+    "category": "Carniceria",
+    "price_buy": 1300.0,
+    "price_sell": 2200.0,
+    "exp_date": "2023-12-10",
+    "stock": 50,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Tapa de Cuadril",
+    "category": "Carniceria",
+    "price_buy": 1500.0,
+    "price_sell": 2500.0,
+    "exp_date": "2023-12-13",
+    "stock": 45,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Lomo de Cerdo con Costilla",
+    "category": "Carniceria",
+    "price_buy": 1200.0,
+    "price_sell": 2000.0,
+    "exp_date": "2023-12-15",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Tapa de Lomo de Cerdo",
+    "category": "Carniceria",
+    "price_buy": 1300.0,
+    "price_sell": 2200.0,
+    "exp_date": "2023-12-18",
+    "stock": 40,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Milanesa de Cerdo",
+    "category": "Carniceria",
+    "price_buy": 1100.0,
+    "price_sell": 1900.0,
+    "exp_date": "2023-12-20",
+    "stock": 50,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Chuleta de Cerdo",
+    "category": "Carniceria",
+    "price_buy": 1400.0,
+    "price_sell": 2400.0,
+    "exp_date": "2023-12-23",
+    "stock": 35,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Lomo de Res en Medallones",
+    "category": "Carniceria",
+    "price_buy": 1800.0,
+    "price_sell": 3000.0,
+    "exp_date": "2023-12-25",
+    "stock": 20,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Tapa de Anca de Res en Rodajas",
+    "category": "Carniceria",
+    "price_buy": 1700.0,
+    "price_sell": 2700.0,
+    "exp_date": "2023-12-28",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Puntica Angus",
+    "category": "Carniceria",
+    "price_buy": 1000.0,
+    "price_sell": 3000.0,
+    "exp_date": "2024-12-23",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Puntica Angus 2",
+    "category": "Carniceria",
+    "price_buy": 1000.0,
+    "price_sell": 3000.0,
+    "exp_date": "2024-12-23",
+    "stock": 30,
+    "type": "Corte de Carne"
+  },
+  {
+    "name": "Chorizo Portuano",
+    "category": "Carniceria",
+    "price_buy": 1000.0,
+    "price_sell": 2000.0,
+    "exp_date": "13-05-2029",
+    "stock": 100,
+    "type": "Corte de carne"
+  }
+]

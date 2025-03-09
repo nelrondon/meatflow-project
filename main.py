@@ -25,21 +25,27 @@ ventana.withdraw()
 
 #? VENTANA LOGIN
 loginForm = LoginForm(ventana)
-# loginForm.show()
+loginForm.show()
 
 #? COMPONENTES PRINCIPALES (VENTANA MAIN)
 #- Formulario Productos
 productForm = ProductForm(ventana)
-# productForm.show()
+productForm.show()
 
 #- Formulario Inventario
 stockForm = StockForm(ventana)
-# stockForm.show()
+stockForm.show()
 
 #- Formulario Proveedores
 supplierForm = SupplierForm(ventana)
 supplierForm.show()
 
+
+
+
+
+reporteform=ReporteForm(ventana)
+reporteform.show()
 #? LOOP & CONFIG DE VENTANA
 ventana.protocol("WM_DELETE_WINDOW", handleMainQuit)
 ventana.resizable(False, False)
