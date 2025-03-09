@@ -1,29 +1,27 @@
 import datetime, uuid
-from handledb import DB, FieldDb
+from handledb import DB
+from tkinter import messagebox
 
-class Feedback (FieldDb):
+class Feedback:
     def __init__(self, msg):
-        self.message = msg
-        self.date = str(datetime.datetime.now())
-    
-    def export(self):
-        return self.__dict__
+        self.msg = msg
+        self.date = datetime.datetime.now()
 
 class Cliente:
-    def __init__(self, data=None, name=None):
+    def __init__(self, data, name=None):
         self.id = data["id"] if data != None else str(uuid.uuid4())
         self.name = data["name"] if data != None else name
         self.frec_visit = data["frec_visit"] if data != None else 0
         self.feedback : list[dict] = data["feedback"] if data != None else []
-
-    def addFeedback(self, msg):
-        self.feedback.append(Feedback(msg).export())
-
+    
     def register(self):
         try:
             props = ["id", "name", "frec_visit", "feedback"]
             reg = {prop: getattr(self, prop) for prop in props}
             DB.save("clientes", reg)
-            return True
+            messagebox.showinfo("Registro", "Cleinte registrado con exito")
         except:
-            return False
+            messagebox.showinfo("Error", "Cliente no registrado")
+        
+    def __repr__(self):
+        return f" Id: {self.id}\n Nombre: {self.name}\n visitas: {self.frec_visit}\n comentario: {self.feedback}"

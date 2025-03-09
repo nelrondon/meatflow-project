@@ -27,6 +27,17 @@ class Auth:
             "user": user, 
             "password": passwHashed.decode("utf-8")}
         return DB.save(module, user)
+    
+    @staticmethod
+    def changePassw(user, newpw):
+        module = "auth_data"
+        newpw = newpw.encode("utf-8")
+        salt = bcrypt.gensalt()
+        newpwHashed = bcrypt.hashpw(newpw, salt)
+
+
+        DB.update(module, "user", user, {"password": newpwHashed.decode("utf-8")})
+        return True        
 
 class AuthUser:
     def __init__(self, user):
@@ -49,14 +60,18 @@ class AuthUser:
             self.__isLogin = bcrypt.checkpw(passw, passwHashed)
 
         if not self.__isLogin: raise AuthFail("Contraceña o usuario no coincide")
-        return self.__isLogin
+        return userDB
     
     def logout(self):
         self.__isLogin = False
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "create":
-        name = input("Ingresa el nombre: ")
-        user = input("Ingresa el usuario: ")
-        passw = input("Ingresa la contraceña: ")
-        Auth.createUser(name, user, passw)
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "create":
+            name = input("Ingresa el nombre: ")
+            user = input("Ingresa el usuario: ")
+            passw = input("Ingresa la contraceña: ")
+            try:
+                Auth.createUser(name, user, passw)
+            except Exception as e:
+                print(e)

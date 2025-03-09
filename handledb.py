@@ -61,7 +61,11 @@ class DB:
         path = DB.getPath(module)
         data = DB.get(module)
 
-        data.append(newdata)
+        if type(newdata) == list:
+            for _ in newdata:
+                data.append(_)
+        else:
+            data.append(newdata)
         try:
             with open(path, "w") as file:
                 json.dump(data, file)
