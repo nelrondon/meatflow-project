@@ -2,7 +2,15 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
 from cliente import Cliente
+
+from venta import Venta
+
 from datetime import datetime
+
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+from reporte import Reporte
+from inventario import Inventario
 
 from auth import AuthUser, Auth
 from handledb import DB
@@ -75,6 +83,7 @@ class MsgBox:
 class Form (MsgBox):
     def __init__(self, app, title):
         self.app = app
+        self.display = False
         self.main_window = self.app.ventana
         self.toplevel = tk.Toplevel(self.main_window)
         self.toplevel.iconbitmap("assets/favicon.ico")
@@ -87,13 +96,15 @@ class Form (MsgBox):
         self.buttonStyle.configure("TButton", relief="groove", font=("Inter SemiBold", 10), foreground=COLOR1)
 
         self.toplevel.resizable(False, False)
-        self.toplevel.protocol("WM_DELETE_WINDOW", self.hide)
-        # self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
+        # self.toplevel.protocol("WM_DELETE_WINDOW", self.hide)
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
 
     def show(self):
+        self.display = True
         self.toplevel.deiconify()  # Mostrar el formulario
 
     def hide(self):
+        self.display = False
         self.toplevel.withdraw()  # Mostrar el formulario
 
     def handleQuit(self):
@@ -103,6 +114,7 @@ class Form (MsgBox):
 class SecForm (MsgBox):
     def __init__(self, form, title):
         self.form = form
+        self.display = False
         self.toplevel = tk.Toplevel(self.form.main_window)
         self.toplevel.title(f"{title} - MeatFlow")
         self.toplevel.attributes("-topmost", True)
@@ -116,9 +128,11 @@ class SecForm (MsgBox):
         self.toplevel.protocol("WM_DELETE_WINDOW", self.hide)
 
     def show(self):
+        self.display = True
         self.toplevel.deiconify()  # Mostrar el formulario
 
     def hide(self):
+        self.display = True
         self.toplevel.withdraw()  # Mostrar el formulario
 
 class ChangePasswForm(Form):
@@ -340,7 +354,6 @@ class StockForm (Form):
     def setData(self, data=None):
         self.clearCanvas()
         if data == []:
-            messagebox.showerror("No existen coincidencias", "No hay productos en la base de datos, que cumplan con la petición")
             data = self.loadFromDB()
             
         gap = 5
@@ -452,8 +465,6 @@ class Client(Form):
 
         self.sale = Sale(self)
 
-        self.sale.show()
-        
         def validar_cliente(bol):
             result = DB.getOneBy("clientes", "id", self.id.get())
             if result != None and self.id.get() == result["id"]:
@@ -525,20 +536,28 @@ class Sale(SecForm):
 
         # Lista de productos comprados
         self.products_list = []
+
+        # Datos del Cliente
         self.id = self.form.id
         self.name = self.form.name
         self.last_name = self.form.last_name
         
         def registrar_venta():
             if self.pay.get() != "" and self.products_list != []:
-                
+                venta = Venta(
+                    self.id.get(),
+                    self.pay.get(),
+                    self.attention.get(),
+                    self.products_list
+                )
+                venta.register()
+
                 self.PopUp("info", "Ventas", "Venta registrada")
             else:
                 self.PopUp("error", "Error", "Debe llenar todos los campos")
         
         fr1 = tk.Frame(self.toplevel); fr1.pack(pady=10)
         fr2 = tk.Frame(self.toplevel); fr2.pack(pady=5, padx=40)
-        
         
         # Mostrar el cliente
         tk.Label(fr1, text="Cliente:").pack(side="left")
@@ -547,36 +566,65 @@ class Sale(SecForm):
 
         # Campos de entrada
         Widget.InputGrid(fr2, "Fecha:", self.date, [0, 0], width=16, state="readonly", js="center")
-        Widget.InputGrid(fr2, "Método de pago:", self.pay, [1, 0], width=16)
+
+        fr = tk.Frame(fr2); fr.grid(column=1, row=0)
+        # Widget.Caption(fr2, "Método de pago:", self.pay, [1, 0], width=16)
+
+        Widget.Caption(fr, "Método de pago:")
+        op = ["Efectivo", "Tarjeta", "Transferencia"]
+        ttk.OptionMenu(fr, self.pay, op[0], *op, style="Basic.TMenubutton").pack()
         Widget.InputGrid(fr2, "Valoracion de atencion:", self.attention, [2, 0], width=16)
+        
+        fr3 = tk.Frame(self.toplevel); fr3.pack()
 
         # Sección de productos
-        fr_products = tk.Frame(self.toplevel)
-        fr_products.pack(pady=5)
+        fr_products = tk.Frame(fr3)
+        fr_products.grid(column=0, row=0, pady=5, padx=30)
 
-        tk.Label(fr_products, text="Producto:").pack(side="left")
-        self.product_entry = ttk.Entry(fr_products, font=("Inter", 10))
-        self.product_entry.pack(side="left", padx=5)
+        queryFrame = tk.Frame(fr_products); queryFrame.grid(column=0, row=1, padx=20, pady=20)
+        self.query = tk.StringVar()
+        Widget.CaptionGrid(queryFrame, "Producto: ", [0, 0])
+        entryQuery = ttk.Entry(queryFrame, textvariable=self.query, width=15)
+        entryQuery.grid(column=0, row=1)
 
-        tk.Label(fr_products, text="Cantidad:").pack(side="left")
-        self.quantity_entry = ttk.Entry(fr_products, font=("Inter", 10), width=5)
-        self.quantity_entry.pack(side="left", padx=5)
+        self.quantity = tk.IntVar()
+        Widget.CaptionGrid(queryFrame, "Cantidad: ", [1, 0])
+        ttk.Entry(queryFrame, textvariable=self.quantity, width=8).grid(column=1, row=1)
 
-        ttk.Button(fr_products, text="Agregar", command=self.add_product).pack(side="left")
+        def handleQuery(event=None):
+            self.listNameProd.delete(0, tk.END)
+            prods = DB.searchBy("productos", "name", entryQuery.get())
+            for _ in prods:
+                self.listNameProd.insert(tk.END, _["name"])
+        
+        def handleSelect(event=None):
+            i = self.listNameProd.curselection()[0]
+            prod = self.listNameProd.get(i)
+            self.query.set(prod)
+
+        self.listNameProd = tk.Listbox(queryFrame, height=5)
+        self.listNameProd.grid(column=0, row=2, columnspan=3, pady=(5, 10))
+
+        entryQuery.bind("<KeyRelease>", handleQuery)
+        self.listNameProd.bind("<<ListboxSelect>>", handleSelect)
+
+        ttk.Button(queryFrame, text="Agregar", command=self.add_product).grid(column=0, row=3, columnspan=3)
 
         # Caja de texto para mostrar productos agregados
-        self.products_display = tk.Text(self.toplevel, height=10, width=40, state="disabled")
-        self.products_display.pack(pady=10)
+        self.products_display = tk.Text(fr3, height=10, width=40, state="disabled")
+        self.products_display.grid(column=1, row=0 )
+
+        # Boton de Facturar
         fr_facturar = tk.Frame(self.toplevel); fr_facturar.pack(pady=25)
         ttk.Button(fr_facturar,text="Facturar",width=20, command=registrar_venta
         ).grid(column=0, row=0)
         
     def add_product(self):
         """Agrega un producto con cantidad a la lista y lo muestra en la caja de texto."""
-        product = self.product_entry.get().strip()
-        quantity = self.quantity_entry.get().strip()
+        product = self.query.get()
+        quantity = self.quantity.get()
 
-        if product and quantity.isdigit() and int(quantity) > 0:
+        if product and int(quantity) > 0:
             product_entry = f"{product} x{quantity}"  # Formato "Jamón x2"
             self.products_list.append(product_entry)
 
@@ -586,8 +634,130 @@ class Sale(SecForm):
             self.products_display.config(state="disabled")
 
             # Limpiar los campos de entrada
-            self.product_entry.delete(0, tk.END)
-            self.quantity_entry.delete(0, tk.END)
+            self.query.set("")
+            self.quantity.set(0)
         else:
-            print("⚠️ Error: Ingresa un producto y una cantidad válida.") 
+            self.PopUp("error", "⚠️ Error", "Ingresa un producto y una cantidad válida.") 
          
+class ReporteForm(Form):
+    def __init__(self, main_window):
+        super().__init__(main_window, "Reporte de Ventas")
+        Widget.SecLabel(self.toplevel, "Visualiza el reporte de ventas y tendencias")
+
+        # Cargar datos usando handledb.DB
+        self.reporte = self.cargar_datos_reporte()
+
+        # Filtro de búsqueda
+        self.namefl = tk.StringVar()
+        tk.Label(self.toplevel, text="Filtros").pack()
+        ftfr = tk.Frame(self.toplevel)
+        tk.Label(ftfr, text="Producto: ").pack(side="left")
+        tk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
+        tk.Button(ftfr, text="Filtrar", relief="groove", font=("Inter", 9), command=self.handleFilter).pack(side="left")
+        ftfr.pack(pady=(0, 20))
+
+        # Contenedor de reportes
+        self.report_frame = tk.Frame(self.toplevel)
+        self.report_frame.pack(pady=(0, 20))
+
+        # Botón para graficar tendencias
+        tk.Button(self.toplevel, text="Graficar Tendencias", command=self.graficar_tendencias).pack()
+
+        # Contenedor del gráfico
+        self.graph_frame = tk.Frame(self.toplevel)
+        self.graph_frame.pack()
+
+        self.toplevel.protocol("WM_DELETE_WINDOW", self.handleQuit)
+        self.setData()
+
+    def cargar_datos_reporte(self):
+        """Carga solo los productos y cantidades vendidos desde la base de datos JSON y crea el objeto Reporte."""
+
+        ventas_data = DB.get("ventas")  # Cargar ventas desde JSON 
+        if not ventas_data:
+            pass
+
+        # Extraer solo productos y cantidades
+        ventas = []
+        for data in ventas_data:
+            try:
+                venta = Venta(
+                    fecha=data["fecha"],
+                    productos_vendidos=data["productos_vendidos"],
+                    metodo_pago=data["metodo_pago"],
+                    puntuacion_atencion=data["puntuacion_atencion"]
+                )
+                ventas.append(venta)
+            except KeyError as e:
+                pass
+        inventario = Inventario()
+        inventario.products = DB.get("productos")
+        if not inventario.products:
+            pass
+
+        return Reporte(inventario, ventas)
+
+    def handleFilter(self):
+    
+        """Filtra los productos vendidos según el nombre ingresado en la barra de búsqueda."""
+        filtro = self.namefl.get().strip().lower()
+
+        if not filtro:
+            self.setData(self.reporte.generar_reporte_ventas())
+            return
+
+        # Obtener todas las ventas
+        ventas_data = DB.get("ventas")
+        ventas_filtradas = {}
+
+        for venta in ventas_data:
+            for item in venta["productos_vendidos"]:
+                nombre_producto = item["producto"].lower()
+                if filtro in nombre_producto:
+                    ventas_filtradas[item["producto"]] = ventas_filtradas.get(item["producto"], 0) + item["cantidad"]
+
+        if ventas_filtradas:
+            pass
+        else:
+            pass
+        self.setData(ventas_filtradas)
+
+    def setData(self, data=None):
+        """Muestra el reporte de ventas en la interfaz."""
+        for widget in self.report_frame.winfo_children():
+            widget.destroy()  # Limpia el frame antes de agregar nuevos datos
+
+        if data is None:
+            data = self.reporte.generar_reporte_ventas()
+
+        # Encabezado
+        tk.Label(self.report_frame, text="Producto", font=("Inter Semibold", 10)).grid(row=0, column=0)
+        tk.Label(self.report_frame, text="Cantidad Vendida", font=("Inter Semibold", 10)).grid(row=0, column=1)
+
+        # Mostrar los productos
+        for i, (producto, cantidad) in enumerate(data.items()):
+            bg = COLOR1_SOFT if i%2==0 else None
+            tk.Label(self.report_frame,background=bg, text=producto, font=("Inter", 9)).grid(row=i + 1, column=0)
+            tk.Label(self.report_frame,background=bg, text=str(cantidad), font=("Inter", 9)).grid(row=i + 1, column=1)
+
+
+    def graficar_tendencias(self):
+        """Genera y muestra un gráfico de tendencias dentro de Tkinter."""
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+
+        fig, ax = plt.subplots(figsize=(6, 4))
+        tendencias = self.reporte.graficar_tendencias()
+
+        for producto, valores in tendencias.items():
+            ax.plot(valores['fechas'], valores['cantidades'], label=producto)
+
+        ax.set_xlabel('Fecha')
+        ax.set_ylabel('Cantidad Vendida')
+        ax.set_title('Tendencias de Ventas')
+        ax.legend()
+        ax.tick_params(axis='x', rotation=45)
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack()

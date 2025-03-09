@@ -28,6 +28,12 @@ class MainApp:
         stockForm = StockForm(self)
         buyForm = BuyForm(self)
         clientForm = Client(self)
+        reportForm = ReporteForm(self)
+        # loginForm.hide()
+
+
+        # clientForm.show()
+        # reportForm.show()
 
         #? MENÚ DE NAVEGACIÓN
         nav_menu = tk.Menu(self.ventana)
