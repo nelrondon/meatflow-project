@@ -1,9 +1,9 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk,Menu
 from tkinter import messagebox
 from cliente import Cliente
 
-from venta import Venta
+from venta import Venta 
 
 from datetime import datetime
 
@@ -648,122 +648,195 @@ class Sale(SecForm):
         else:
             self.PopUp("error", "⚠️ Error", "Ingresa un producto y una cantidad válida.") 
          
+
 class ReporteForm(Form):
     def __init__(self, main_window):
         super().__init__(main_window, "Reporte de Ventas")
         Widget.SecLabel(self.toplevel, "Visualiza el reporte de ventas y tendencias")
 
-        # Cargar datos usando handledb.DB
-        self.reporte = self.cargar_datos_reporte()
+        # Menú de navegación
+        self.menubar = Menu(self.toplevel)
+        self.toplevel.config(menu=self.menubar)
 
-        # Filtro de búsqueda
+        self.menu_reportes = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Reportes", menu=self.menu_reportes)
+        self.menu_reportes.add_command(label="Ver Reporte", command=lambda: self.mostrar_frame(self.report_frame))
+        self.menu_reportes.add_command(label="Ver Ganancias", command=lambda: self.mostrar_frame(self.frame_ganancias))
+        self.menu_reportes.add_command(label="Ver Porcentaje de Ventas", command=lambda: self.mostrar_frame(self.frame_porcentajes))
+
+        # Crear frames
+        self.report_frame = tk.Frame(self.toplevel)
+        self.frame_ganancias = tk.Frame(self.toplevel)
+        self.frame_porcentajes = tk.Frame(self.toplevel)
+
+        # Mostrar solo el reporte al inicio
+        self.mostrar_frame(self.report_frame)
+
+        # Crear interfaz de cada frame
+        self.crear_interfaz_reporte()
+        self.crear_interfaz_ganancias()
+        self.crear_interfaz_porcentaje()
+
+    def mostrar_frame(self, frame):
+        """Muestra solo un frame a la vez."""
+        for f in [self.report_frame, self.frame_ganancias, self.frame_porcentajes]:
+            f.pack_forget()
+        frame.pack(fill="both", expand=True)
+
+    def cargar_datos_reporte(self):
+        """Carga datos de productos y ventas desde JSON."""
+        ventas_data = DB.get("ventas") or []
+        productos_data = DB.get("productos") or []
+
+        ventas = {item["name"]: item["amount"] for venta in ventas_data for item in venta["productos"]}
+        productos = {prod["name"]: prod for prod in productos_data}
+
+        return ventas, productos
+
+    # =================== FRAME REPORTE =================== #
+    def crear_interfaz_reporte(self):
+        """Interfaz del reporte de ventas."""
         self.namefl = tk.StringVar()
-        tk.Label(self.toplevel, text="Filtros").pack()
-        ftfr = tk.Frame(self.toplevel)
+        tk.Label(self.report_frame, text="Filtros").pack()
+        ftfr = tk.Frame(self.report_frame)
         tk.Label(ftfr, text="Producto: ").pack(side="left")
         tk.Entry(ftfr, textvariable=self.namefl).pack(side="left", padx=10)
         tk.Button(ftfr, text="Filtrar", font=("Inter", 9), command=self.handleFilter).pack(side="left")
         ftfr.pack(pady=(0, 20))
 
-        # Contenedor de reportes
-        self.report_frame = tk.Frame(self.toplevel)
-        self.report_frame.pack(pady=(0, 20))
+         # Contenedor de la tabla de reporte
+        self.table_frame = tk.Frame(self.report_frame)
+        self.table_frame.pack(pady=10)
 
-        # Botón para graficar tendencias
-        tk.Button(self.toplevel, text="Graficar Tendencias", command=self.graficar_tendencias).pack()
+        # Botón para graficar tendencias (ahora sí está en el frame de Reporte)
+        tk.Button(self.report_frame, text="Graficar Tendencias", command=self.graficar_tendencias).pack(pady=10)
 
-        # Contenedor del gráfico
-        self.graph_frame = tk.Frame(self.toplevel)
+        self.graph_frame = tk.Frame(self.report_frame)
         self.graph_frame.pack()
 
-        self.setData()
-
-    def cargar_datos_reporte(self):
-        """Carga solo los productos y cantidades vendidos desde la base de datos JSON y crea el objeto Reporte."""
-
-        ventas_data = DB.get("ventas")  # Cargar ventas desde JSON 
-        if not ventas_data:
-            pass
-
-        # Extraer solo productos y cantidades
-        ventas = []
-        for data in ventas_data:
-            try:
-                venta = Venta(
-                    fecha=data["fecha"],
-                    productos_vendidos=data["productos_vendidos"],
-                    metodo_pago=data["metodo_pago"],
-                    puntuacion_atencion=data["puntuacion_atencion"]
-                )
-                ventas.append(venta)
-            except KeyError as e:
-                pass
-        inventario = Inventario()
-        inventario.products = DB.get("productos")
-        if not inventario.products:
-            pass
-
-        return Reporte(inventario, ventas)
+        self.mostrar_reporte()
 
     def handleFilter(self):
-    
-        """Filtra los productos vendidos según el nombre ingresado en la barra de búsqueda."""
+        """Filtra los productos según el nombre ingresado."""
         filtro = self.namefl.get().strip().lower()
+        ventas, _ = self.cargar_datos_reporte()
+        ventas_filtradas = {p: c for p, c in ventas.items() if filtro in p.lower()}
+        self.mostrar_reporte(ventas_filtradas)
 
-        if not filtro:
-            self.setData(self.reporte.generar_reporte_ventas())
-            return
+    def mostrar_reporte(self, data=None):
+        """Muestra los productos vendidos de manera centrada."""
+        for widget in self.table_frame.winfo_children():
+            widget.destroy()
 
-        # Obtener todas las ventas
-        ventas_data = DB.get("ventas")
-        ventas_filtradas = {}
-
-        print(ventas_data)
-
-        for venta in ventas_data:
-            for item in venta["productos"]:
-                nombre_producto = item["name"].lower()
-                if filtro in nombre_producto:
-                    ventas_filtradas[item["name"]] = ventas_filtradas.get(item["name"], 0) + item["amount"]
-
-        self.setData(ventas_filtradas)
-
-    def setData(self, data=None):
-        """Muestra el reporte de ventas en la interfaz."""
-        for widget in self.report_frame.winfo_children():
-            widget.destroy()  # Limpia el frame antes de agregar nuevos datos
-
-        if data is None:
-            data = self.reporte.generar_reporte_ventas()
+        ventas, _ = self.cargar_datos_reporte()
+        data = data or ventas
 
         # Encabezado
-        tk.Label(self.report_frame, text="Producto", font=("Inter Semibold", 10)).grid(row=0, column=0)
-        tk.Label(self.report_frame, text="Cantidad Vendida", font=("Inter Semibold", 10)).grid(row=0, column=1)
+        ttk.Label(self.table_frame, text="Producto", font=("Arial", 10, "bold"), anchor="center").grid(row=0, column=0, sticky="ew")
+        ttk.Label(self.table_frame, text="Cantidad Vendida", font=("Arial", 10, "bold"), anchor="center").grid(row=0, column=1, sticky="ew")
 
         # Mostrar los productos
-        for i, (producto, cantidad) in enumerate(data.items()):
-            bg = COLOR1_SOFT if i%2==0 else None
-            tk.Label(self.report_frame,background=bg, text=producto, font=("Inter", 9)).grid(row=i + 1, column=0)
-            tk.Label(self.report_frame,background=bg, text=str(cantidad), font=("Inter", 9)).grid(row=i + 1, column=1)
-
+        for i, (producto, cantidad) in enumerate(data.items(), start=1):
+            bg = COLOR1_SOFT if i % 2 == 0 else None
+            ttk.Label(self.table_frame, background=bg, text=producto, anchor="center").grid(row=i, column=0, sticky="ew")
+            ttk.Label(self.table_frame, background=bg, text=str(cantidad), anchor="center").grid(row=i, column=1, sticky="ew")
 
     def graficar_tendencias(self):
-        """Genera y muestra un gráfico de tendencias dentro de Tkinter."""
+        """Genera y muestra un gráfico de tendencias dentro del frame de Reporte."""
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
 
         fig, ax = plt.subplots(figsize=(6, 4))
-        tendencias = self.reporte.graficar_tendencias()
+        ventas, _ = self.cargar_datos_reporte()
 
-        for producto, valores in tendencias.items():
-            ax.plot(valores['fechas'], valores['cantidades'], label=producto)
+        productos = list(ventas.keys())
+        cantidades = list(ventas.values())
 
-        ax.set_xlabel('Fecha')
-        ax.set_ylabel('Cantidad Vendida')
-        ax.set_title('Tendencias de Ventas')
-        ax.legend()
+        ax.bar(productos, cantidades, color="blue")
+        ax.set_xlabel("Productos")
+        ax.set_ylabel("Cantidad Vendida")
+        ax.set_title("Tendencias de Ventas")
         ax.tick_params(axis='x', rotation=45)
 
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack()
+
+    # =================== FRAME GANANCIAS =================== #
+    def crear_interfaz_ganancias(self):
+        """Crea la interfaz del frame de ganancias."""
+        ttk.Label(self.frame_ganancias, text="Ganancias por producto", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Button(self.frame_ganancias, text="Calcular Ganancias", command=self.mostrar_ganancias).pack()
+
+    def calcular_ganancias(self):
+        """Calcula ganancias por producto."""
+        ventas, productos = self.cargar_datos_reporte()
+
+        ganancias = {}
+        ganancia_total = 0
+
+        for nombre, cantidad in ventas.items():
+            if nombre in productos:
+                price_buy = productos[nombre]["price_buy"]
+                price_sell = productos[nombre]["price_sell"]
+                ganancia = (price_sell - price_buy) * cantidad
+                ganancias[nombre] = ganancia
+                ganancia_total += ganancia
+
+        return ganancias, ganancia_total
+
+    def mostrar_ganancias(self):
+        """Muestra las ganancias calculadas en el centro de la ventana."""
+        ganancias, ganancia_total = self.calcular_ganancias()
+        
+        for widget in self.frame_ganancias.winfo_children():
+            widget.destroy()
+
+        # Configurar el frame para que se expanda y los elementos se centren
+        self.frame_ganancias.pack(expand=True, fill="both")
+        self.frame_ganancias.grid_columnconfigure(0, weight=1)
+        self.frame_ganancias.grid_columnconfigure(1, weight=1)
+
+        # Encabezado centrado
+        ttk.Label(self.frame_ganancias, text="Producto", font=("Arial", 10, "bold"), anchor="center").grid(row=0, column=0, sticky="nsew", padx=10, pady=5)
+        ttk.Label(self.frame_ganancias, text="Ganancia", font=("Arial", 10, "bold"), anchor="center").grid(row=0, column=1, sticky="nsew", padx=10, pady=5)
+
+        # Mostrar los productos con alineación centrada
+        for i, (producto, ganancia) in enumerate(ganancias.items(), start=1):
+            bg = COLOR1_SOFT if i % 2 == 0 else None
+            ttk.Label(self.frame_ganancias, background=bg, text=producto, anchor="center").grid(row=i, column=0, sticky="nsew", padx=10, pady=2)
+            ttk.Label(self.frame_ganancias, background=bg, text=f"${ganancia:.2f}", anchor="center").grid(row=i, column=1, sticky="nsew", padx=10, pady=2)
+
+        # Mostrar la ganancia total centrada y en verde
+        ttk.Label(self.frame_ganancias, text=f"Ganancia Total: ${ganancia_total:.2f}", 
+                font=("Arial", 12, "bold"), foreground="green", anchor="center").grid(row=i+1, columnspan=2, sticky="nsew", padx=10, pady=10)
+
+    # =================== FRAME PORCENTAJE =================== #
+    def crear_interfaz_porcentaje(self):
+        """Crea la interfaz del frame de porcentaje de ventas."""
+        ttk.Label(self.frame_porcentajes, text="Porcentaje de Ventas", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Button(self.frame_porcentajes, text="Generar Gráfico", command=self.mostrar_porcentaje_ventas).pack()
+
+    def calcular_porcentaje_ventas(self):
+        """Calcula el porcentaje de ventas por producto."""
+        ventas, _ = self.cargar_datos_reporte()
+        total_general = sum(ventas.values())
+        return {prod: (cant / total_general) * 100 for prod, cant in ventas.items()} if total_general else {}
+
+    def mostrar_porcentaje_ventas(self):
+        """Genera gráfico de porcentaje de ventas."""
+        for widget in self.frame_porcentajes.winfo_children():
+            widget.destroy()
+
+        fig, ax = plt.subplots()
+        porcentajes = self.calcular_porcentaje_ventas()
+
+        productos = list(porcentajes.keys())
+        valores = list(porcentajes.values())
+
+        ax.pie(valores, labels=productos, autopct='%1.1f%%', startangle=90, colors=["red", "blue", "green", "orange", "purple"])
+        ax.set_title("Porcentaje de Ventas")
+
+        canvas = FigureCanvasTkAgg(fig, master=self.frame_porcentajes)
         canvas.draw()
         canvas.get_tk_widget().pack()

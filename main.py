@@ -30,9 +30,9 @@ class MainApp:
         clientForm = Client(self)
         reportForm = ReporteForm(self)
         loginForm.hide()
-
+        loginForm.show()
         # clientForm.show()
-        reportForm.show()
+       
 
         #? MENÚ DE NAVEGACIÓN
         nav_menu = tk.Menu(self.ventana)
@@ -67,7 +67,7 @@ class MainApp:
         ttk.Button(self.botones, command=buyForm.show, width=25, text="Registrar compra").pack(pady=gap)
         ttk.Button(self.botones, command=clientForm.show, width=25, text="Registrar venta").pack(pady=gap)
         ttk.Button(self.botones, command=stockForm.show, width=25, text="Ver inventario").pack(pady=gap)
-        ttk.Button(self.botones, command=None, width=25, text="Generar reporte").pack(pady=gap)
+        ttk.Button(self.botones, command=reportForm.show, width=25, text="Generar reporte").pack(pady=gap)
 
         self.botones.pack()
 

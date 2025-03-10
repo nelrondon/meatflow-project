@@ -32,5 +32,5 @@ class Venta:
             return f"{1}".zfill(5)
         
     def __repr__(self):
-        return f"Fecha: {self.date}\nCliente:\n CI: {self.client["id"]}\n Nombre: {self.client["name"]}\nMetodo de pago: {self.method_paid}\nProductos: \n 1:{self.productos[0]}\n 2:{self.productos[1]}\n 3:{self.productos[2]}\nMonto: {self.rate_sell}"
+        return f"Fecha: {self.date}\nCliente:\n CI: {self.client['id']}\n Nombre: {self.client['name']}\nMetodo de pago: {self.method_paid}\nProductos: \n 1:{self.productos[0]}\n 2:{self.productos[1]}\n 3:{self.productos[2] }\nMonto: {self.rate_sell}"
     
